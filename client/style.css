@@ -1,0 +1,192 @@
+:root {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+
+  /**************************** variables ****************************/
+  --purple: rgb(234,128,252);
+}
+
+
+html, body {
+  height: 98vh;
+  max-height: 98vh;
+  width: 98vw;
+  max-width: 98vw;
+  overflow: auto;
+  background-color: #212121;
+
+}
+
+/****************************** Create Page *********************************/
+
+.homeContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: space-around; */
+}
+
+h1 {
+  color: var(--purple);
+  padding: 20px 50px;
+  border: 2px solid white;
+  border-radius: 25px;
+  font-size: 6em;
+  margin-top: 10vh;
+}
+
+
+.gameSelection {
+
+  color: white;
+  width: 70vw;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  font-size: 20px;
+
+}
+
+.createGame, .joinGame {
+
+  display: flex;
+  flex-direction: column;
+  width: 25vw;
+  height: 15vh;
+  align-items: center;
+  justify-content: space-around;
+  padding: 40px 50px;
+  border: 1px solid white;
+  border-radius: 30px;
+  gap: 1vh;
+}
+
+.createGame > button, .joinGame > button {
+  background-color: var(--purple);
+  font-size: 20px;
+  width: 80%;
+  padding: 2px;
+  color: black;
+  min-height: 50px;
+  border-radius: 10px;
+}
+
+.createGame > button:hover, .joinGame > button:hover {
+  border: 2px solid white;
+}
+
+.gameSelection input {
+  box-sizing: border-box;
+  height: 50px;
+  margin: 0;
+  padding: 2px 2px 2px 20px;
+  width: 80%;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+
+#idDiv {
+  text-align: left;
+}
+
+
+/**************************** Chess Page *****************************/
+
+.chess {
+  /* display: none; */
+  display:block;
+}
+
+.board {
+  height: auto;
+  width: auto;
+  
+  display: flex;
+  position: absolute;
+  
+  /* black */
+  /* flex-direction: column;
+  bottom: 8vh; */
+
+  /* white */
+  flex-direction: column-reverse;
+  bottom: 8vh;
+
+  left: 10%;
+  /* border: 2px solid red; */
+  
+}
+
+.rank {
+  display: flex;
+  
+  /* black */
+  /* flex-direction: row-reverse; */
+  
+  /* white */
+  flex-direction: row;
+  
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.flipped-board {
+  height: auto;
+  width: auto;
+  
+  display: flex;
+  position: absolute;
+  
+  /* black */
+  flex-direction: column;
+  bottom: 8vh;
+  
+  left: 10%;
+  border: 2px solid black;
+  
+}
+
+.flipped-rank {
+  display: flex;
+
+  /* black */
+  flex-direction: row-reverse;
+
+  /* white */
+  /* flex-direction: row; */
+
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.square {
+  height: 10vh;
+  width: 10vh;
+  background-color: greenyellow;
+  border: 1px solid transparent;
+  box-sizing: content-box;
+  /* border-color: black; */
+
+}
+
+img {
+  height: 100%;
+  width: auto;
+  background-color: inherit;
+}
+
