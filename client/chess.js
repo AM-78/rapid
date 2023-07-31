@@ -12,6 +12,10 @@ import qbURL from "./src/qb.svg"
 import kbURL from "./src/kb.svg"
 import pbURL from "./src/pb.svg"
 
+
+
+// _____________________Some Global Variables_________________________
+
 let URLSMap = {
     "rw": rwURL,
     "nw": nwURL,
@@ -26,9 +30,6 @@ let URLSMap = {
     "kb": kbURL,
     "pb": pbURL,
 }
-
-
-// _____________________Some Global Variables_________________________
 
 let boardState = [
                         ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw",],
@@ -65,6 +66,10 @@ let playerUnderCheck = ""
 let player = "w"
 let moveOf = "w"
 let opposite = "b"
+let gid = ""
+let wid = ""
+let bid = ""
+let move = ""
 // ___________________Utility Functions__________________________
 
 function sleep (time) {
@@ -231,10 +236,16 @@ function checkCheckMate() {
     }
 
     if(totalPossibleMoves == 0) {
+
         let winner = (moveOf == "w") ? "Black" : "White"
         // window.alert()
         sleep(200).then(() => {
-        if(window.confirm(`Checkmate! ${winner} is Victorious!`)) reset()})
+            if(window.confirm(`Checkmate! ${winner} is Victorious!`)) {
+                let tmp = document.querySelectorAll(".under-check")
+                tmp.forEach(e => e.classList.remove("under-check"))
+                reset()
+            }
+        })
     }
 
 }
@@ -583,12 +594,19 @@ function unMark([rank, file]) {
 
 function sendMove(source, target) {
     
-    makeMove(source, target)
+    // local
+    // makeMove(source, target)
+
+    // websocket
+    socket.emit("makeMove", {gid, wid, bid, move:{source: source, target: target}})
 
 }
 
 
 function makeMove(source, target) {
+
+    let tmp = document.querySelectorAll(".under-check")
+    tmp.forEach(e => e.classList.remove("under-check"))
 
     let [rank, file] = RFfromId(source)
     let piece = boardState[rank-1][file-1]
@@ -604,7 +622,21 @@ function makeMove(source, target) {
         unMark(possibleSquares[i])
     }
     unMark(RFfromId(source))
-    if(checkCheck(piece[1])) console.log("CHECK!!!", piece[1])
+    let toCheck = piece[1] == "w" ? "b" : "w"
+    if(checkCheck(toCheck)) {
+        let king = ""
+        for(let i=0; i<8; i++) {
+            for(let j=0; j<8; j++) {
+                if(boardState[i][j] == "k"+toCheck) {
+                    king = String(i+1) + String(j+1)
+                    break;
+                }
+            }
+        }
+
+        document.getElementById(king).classList.add("under-check")
+        console.log("CHECK!!! given by: ", piece[1])
+    }
     flipMove()
     console.log("flipped move ", moveOf, player)
     checkCheckMate()
@@ -753,14 +785,63 @@ function flipBoard() {
     }
 }
 
-let gid = localStorage.getItem("gid")
-let wid = localStorage.getItem("wid")
-let bid = localStorage.getItem("bid")
-let move = ""
 
-reset()
 
-if(bid) {
-    player = "b"
-    flipBoard()
+
+
+
+// Websockets part ___________________________________________
+
+import { io } from "socket.io-client"
+
+const localURL = "http://127.0.0.1:4000/chess"
+const socket = io(localURL)
+
+function configSocket() {
+
+    socket.on("connect", () => {
+        console.log("Connected: ", socket.id)
+    })
+
+    socket.on("disconnect", () => {
+        console.log(socket.id)
+    })
+
+    socket.on("err", (err) => {
+        window.alert(err)
+    })
+
+    socket.on("makeMove", (move) => {
+        console.log("move received", move)
+        makeMove(move.source, move.target)
+    })
+
 }
+
+
+function initAll() {
+
+    gid = localStorage.getItem("gid")
+    wid = localStorage.getItem("wid")
+    bid = localStorage.getItem("bid")
+    move = ""
+    navigator.clipboard.writeText(gid)
+    document.getElementById("showID").innerHTML += `&nbsp  ${gid}`
+    reset()
+
+    configSocket()
+    
+    if(wid) {
+        socket.emit("create", {gid, wid})
+    } else {
+        console.log("bid: ", bid)
+        player = "b"
+        flipBoard()
+        socket.emit("join", {gid, bid})
+    }
+}
+
+
+
+
+initAll()

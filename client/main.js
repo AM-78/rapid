@@ -3,12 +3,20 @@ let gid = "default"
 let wid = ""
 let bid = ""
 
-function sendToChess() {
-    console.log("Sending")
-    window.location.href += "chess"
+function clearLocalStorage() {
+    localStorage.setItem("gid", "")
+    localStorage.setItem("wid", "")
+    localStorage.setItem("bid", "")
+    localStorage.setItem("player", "")
 }
 
-async function handleCreate(event) {
+function sendToChess() {
+    console.log("Sending")
+    // window.location.href += "chess"
+    window.location.href += "chess.html"
+}
+
+function handleCreate(event) {
 
     event.preventDefault()  
     
@@ -27,12 +35,12 @@ async function handleCreate(event) {
 }
 
 
-async function handleJoin(event) {
+function handleJoin(event) {
     
     event.preventDefault()
     
     const inputField = document.getElementById("joinId")
-    gid = inputField.value
+    gid = inputField.value.trim()
     bid = uuid4()
     
     localStorage.setItem("gid", gid)
@@ -43,15 +51,16 @@ async function handleJoin(event) {
 }
 
 
-async function handleCopy() {
+function handleCopy() {
     console.log("handleCopy")
     navigator.clipboard.writeText(gid)
     sendToChess()
 }
 
+console.log("main.js loaded...")
+clearLocalStorage()
+
 document.getElementById("createBtn").addEventListener("click", handleCreate)
 document.getElementById("joinBtn").addEventListener("click", handleJoin)
 document.getElementById("copyBtn").addEventListener("click", handleCopy)
 
-
-console.log("Loaded!!!")
