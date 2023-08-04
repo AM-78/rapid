@@ -115,6 +115,18 @@ chessio.on("connection", (socket) => {
         }
     })
 
+    socket.on("offer", (payload) => {
+        socket.to(payload.gid).emit("offer", payload)
+    })
+    
+    socket.on("answer", (payload) => {
+        socket.to(payload.gid).emit("answer", payload)
+    })
+
+    socket.on("ice-candidate", (payload) => {
+        socket.to(payload.gid).emit("ice-candidate", payload.candidate)
+    })
+
     socket.on("disconnect", () => {
         let discGame = Object.keys(CurrentChessGames).find(key => {
             CurrentChessGames[key].w_sid == socket.id ||

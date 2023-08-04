@@ -12,7 +12,10 @@ import qbURL from "./src/qb.svg"
 import kbURL from "./src/kb.svg"
 import pbURL from "./src/pb.svg"
 
-
+import camOn from "./src/camOn.svg"
+import camOff from "./src/camOff.svg"
+import micOn from "./src/micOn.svg"
+import micOff from "./src/micOff.svg"
 
 // _____________________Some Global Variables_________________________
 
@@ -70,6 +73,8 @@ let gid = ""
 let wid = ""
 let bid = ""
 let move = ""
+let localStream, remoteStream, peerConnection
+
 // ___________________Utility Functions__________________________
 
 function sleep (time) {
@@ -790,12 +795,102 @@ function flipBoard() {
 
 
 
-// Websockets part ___________________________________________
+// Websockets and WebRTCpart ___________________________________________
 
 import { io } from "socket.io-client"
 
 const localURL = "http://127.0.0.1:4000/chess"
 const socket = io(localURL)
+
+const servers = {
+    iceServers: [
+        {
+            urls: ["stun:stun1.1.google.com:19302", "stun:stun2.1.google.com:19302"]
+        }
+    ]
+}
+
+
+function handleICECandidateEvent(e) {
+    if (e.candidate) {
+        let payload = {
+            gid: gid,
+            candidate: e.candidate,
+        }
+        socket.emit("ice-candidate", payload);
+    }
+}
+
+
+async function initMedia(a, b) {
+
+    localStream = await navigator.mediaDevices.getUserMedia({video: a, audio: b})
+    document.getElementById("user1").srcObject = localStream
+
+    toggleCam("off")
+    toggleMic("off")
+    
+}
+
+
+async function createOffer() {
+    peerConnection = new RTCPeerConnection(servers)
+    
+    remoteStream = new MediaStream()
+    document.getElementById("user2").srcObject = remoteStream
+
+    localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream)
+    })
+
+    peerConnection.ontrack = async (event) => {
+        event.streams[0].getTracks().forEach((track) => {
+            remoteStream.addTrack(track)
+        })
+    }
+
+    peerConnection.onicecandidate = handleICECandidateEvent
+    
+    let offer = await peerConnection.createOffer()
+    await peerConnection.setLocalDescription(offer)
+
+}
+
+
+async function createAnswer(offer) {
+
+    peerConnection = new RTCPeerConnection(servers)
+    
+    remoteStream = new MediaStream()
+    document.getElementById("user2").srcObject = remoteStream
+
+    localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream)
+    })
+
+    peerConnection.ontrack = async (event) => {
+        event.streams[0].getTracks().forEach((track) => {
+            remoteStream.addTrack(track)
+        })
+    }
+
+    peerConnection.onicecandidate = handleICECandidateEvent
+    if(!offer) return alert("No offer")
+    await peerConnection.setRemoteDescription(offer)
+
+    let answer = await peerConnection.createAnswer()
+    await peerConnection.setLocalDescription(answer)
+}
+
+
+async function acceptAnswer(answer) {
+
+    if(!answer) return alert("No answer")
+    if(!peerConnection.currentRemoteDescription) {
+        peerConnection.setRemoteDescription(answer)
+    }
+}
+
 
 function configSocket() {
 
@@ -816,22 +911,115 @@ function configSocket() {
         makeMove(move.source, move.target)
     })
 
+    socket.on("2ndJoined", async () => {
+
+        let payload = { gid: gid }
+        await createOffer()
+
+        payload.sdp = peerConnection.localDescription
+
+        socket.emit("offer", payload)
+
+    })
+    
+    socket.on("offer", async (payload) => {
+        
+        console.log(payload)
+        await createAnswer(payload.sdp)
+
+        payload.sdp = peerConnection.localDescription
+
+        socket.emit("answer", payload)
+
+    })
+
+    socket.on("answer", async (payload) => {
+
+        await acceptAnswer(payload.sdp)
+
+    })
+
+    socket.on("ice-candidate", (candidate) => {
+        candidate = new RTCIceCandidate(candidate)
+        peerConnection.addIceCandidate(candidate).catch(e => console.log(e))
+    })
+
 }
 
 
-function initAll() {
+function toggleCam(setTo) {
+    console.log("toggling cam")
+    const videoTrack = localStream.getTracks().find(track => track.kind == "video")
+    const btn = document.getElementById("toggle-cam")
+    
+    if(setTo === "on") {
+        videoTrack.enabled = true
+        // btn.firstChild.src = "src/images/camOn.svg"
+        btn.firstChild.src = camOn
+    } else if(setTo === "off") {
+        videoTrack.enabled = false
+        // btn.firstChild.src = "src/images/camOff.svg"
+        btn.firstChild.src = camOff
+    } else {
+        if(videoTrack.enabled) {
+            // btn.firstChild.src = "src/images/camOff.svg"
+            btn.firstChild.src = camOff
+        } else {
+            // btn.firstChild.src = "src/images/camOn.svg"
+            btn.firstChild.src = camOn
+        }
+        videoTrack.enabled = !videoTrack.enabled
+    }
+}
+
+
+function toggleMic(setTo) {
+    console.log("toggling mic")
+    const audioTrack = localStream.getTracks().find(track => track.kind == "audio")
+    const btn = document.getElementById("toggle-mic")
+    
+    if(setTo === "on") {
+        audioTrack.enabled = true
+        // btn.firstChild.src = "src/images/micOn.svg"
+        btn.firstChild.src = micOn
+    } else if(setTo === "off") {
+        audioTrack.enabled = false
+        // btn.firstChild.src = "src/images/micOff.svg"
+        btn.firstChild.src = micOff
+    } else {
+        if(audioTrack.enabled) {
+            // btn.firstChild.src = "src/images/micOff.svg"
+            btn.firstChild.src = micOff
+        } else {
+            // btn.firstChild.src = "src/images/micOn.svg"
+            btn.firstChild.src = micOn
+        }
+        audioTrack.enabled = !audioTrack.enabled
+    }
+
+    console.log(audioTrack)
+}
+
+
+async function initAll() {
 
     gid = localStorage.getItem("gid")
     wid = localStorage.getItem("wid")
     bid = localStorage.getItem("bid")
+    let pl = localStorage.getItem("player")
     move = ""
     navigator.clipboard.writeText(gid)
     document.getElementById("showID").innerHTML += `&nbsp  ${gid}`
     reset()
 
+    document.getElementById("toggle-cam").addEventListener("click", toggleCam)
+    document.getElementById("toggle-mic").addEventListener("click", toggleMic)
+
+
+    await initMedia(true, true)
     configSocket()
     
-    if(wid) {
+    if(pl == "w") {
         socket.emit("create", {gid, wid})
     } else {
         console.log("bid: ", bid)
@@ -839,8 +1027,8 @@ function initAll() {
         flipBoard()
         socket.emit("join", {gid, bid})
     }
-}
 
+}
 
 
 
