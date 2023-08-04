@@ -4,6 +4,7 @@ const uuid4 = require("uuid4")
 const express = require("express")
 const socket = require("socket.io")
 const http = require("http")
+const path = require("path")
 
 const app = express()
 const server = http.createServer(app)
@@ -13,12 +14,22 @@ const io = socket(server, {
     }
   })
 
+app.use(express.static(__dirname + "/dist"))
 
 app.get('/api', (req, res) => {
     res.json({
         message: 'Hello world',
-    });
-});
+    })
+})
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '/dist/index.html'))
+  })
+
+  app.get('/chess', (req, res) => {
+    res.sendFile(path.join(__dirname, '/dist/chess.html'));
+  });
+
   
 class ChessGame {
 
@@ -107,7 +118,7 @@ chessio.on("connection", (socket) => {
                 socket.emit("err", "Please wait for your turn.")
             } else {
                 chessGame.changeTurn()
-                console.log("Emmiting to the room", move)
+                // console.log("Emmiting to the room", move)
                 chessio.in(gid).emit("makeMove", move)
             }
         } else {

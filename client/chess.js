@@ -800,7 +800,8 @@ function flipBoard() {
 import { io } from "socket.io-client"
 
 const localURL = "http://127.0.0.1:4000/chess"
-const socket = io(localURL)
+const hostingURL = "/chess"
+const socket = io(hostingURL)
 
 const servers = {
     iceServers: [

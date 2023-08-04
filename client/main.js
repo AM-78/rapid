@@ -13,7 +13,7 @@ function clearLocalStorage() {
 function sendToChess() {
     console.log("Sending")
     // window.location.href += "chess"
-    window.location.href += "chess.html"
+    window.location.href += "chess"
 }
 
 function handleCreate(event) {
